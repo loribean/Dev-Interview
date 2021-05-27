@@ -31,7 +31,7 @@ class PriceHelper
         }
         $qtyTiers = array_keys($tiers);
         $prices = array_values($tiers);
-        // if dont qualify for tier2, means its tier 1
+        // if dont qualify for tier3, means its tier 1
         if($qty < $qtyTiers[1]){
             return $prices[0];
         }
@@ -68,6 +68,8 @@ class PriceHelper
             return 0;
         }
         
+        $qtyTiers = array_keys($tiers);
+        $prices = array_values($tiers);
    
         //if qty less than tier 2, just return tier 1 * qty
         if($qty < $qtyTiers[1]){
