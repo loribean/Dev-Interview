@@ -29,21 +29,22 @@ class PriceHelper
         if($qty <= 0){
             return 0;
         }
-        
-    $qualifyForTier2 =  $qty / 10001 >= 1;
-
-// if dont qualify for tier, means its tier 1
-    if(!$qualifyForTier2){
-        return $tiers[0];
-    } 
-    $qualifyForTier3 =  $qty / 100001 >= 1;
-//if  qualify for tier 3, means its tier 3
-    if($qualifyForTier3){
-        return $tiers[100001];
-    }
-// else, its tier 2
-    return $tiers[10001];
+        $qtyTiers = array_keys($tiers);
+        $prices = array_values($tiers);
+        // if dont qualify for tier2, means its tier 1
+        if($qty < $qtyTiers[1]){
+            return $prices[0];
+        }
     
+        $quantityForTier2 = $qty - ($qtyTiers[1]) ;
+        $quantityForTier3 = $qty - $qtyTiers[2];
+        //if  qualify for tier 3, means its tier 3
+        if($quantityForTier3 >= 0){
+            return $prices[2]; 
+        }
+        // else, its tier 2
+            return $prices[1];
+            
         
     }
 
@@ -66,24 +67,20 @@ class PriceHelper
         if($qty <= 0){
             return 0;
         }
-        $qtyTiers = array_keys($tiers);
-        $prices = array_values($tiers);
-   
-
-        $quantityForTier2 = $qty - ($qtyTiers[1] ) ;
-        $quantityForTier3 = $qty - $qtyTiers[2];
-
-         if($quantityForTier2 < 1){
-          return $qty * $prices[0];
-        }
-         
-         if($quantityForTier3 >= 0){
-            return $quantityForTier3 * $prices[2] + ($qtyTiers[2]- $qtyTiers[1]) * $prices[1] + ($qtyTiers[1]-1) * $prices[0];
-            
-         }
-
-        return ($qtyTiers[1]-1)  * $prices[0]  + $quantityForTier2 * $prices[1];
         
+   
+        //if qty less than tier 2, just return tier 1 * qty
+        if($qty < $qtyTiers[1]){
+            return $qty * $prices[0];
+          }
+
+        //if qty less than tier 3, just return tier 1 * first 10k, tier 2 * $qty - 10k
+        if($qty < $qtyTiers[2]){
+            return $prices[0]* ($qtyTiers[1]-1) + $prices[1] * ($qty - $qtyTiers[1] + 1);
+        }
+
+        //if we are here means that we have reached tier 3! so, return tier 1 * 10k, tier 2 * 90k and tier 3 * qty - 90k + 1 ie: 101,000 = 10k @ 1.5, 90k @ 1 and 1 @ 0.5
+       return $prices[0]* ($qtyTiers[1]-1) + $prices[1] * ($qtyTiers[2] - $qtyTiers[1]) + $prices[2] * ($qty - $qtyTiers[2] +1 );
     }
 
     /**
@@ -150,7 +147,5 @@ class PriceHelper
 
 
     }
-
-
 
 }
