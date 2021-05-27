@@ -25,7 +25,26 @@ class PriceHelper
      */
     public static function getUnitPriceTierAtQty(int $qty, array $tiers): float
     {
-        return 0.0;
+        // if negative or zero, straight return
+        if($qty <= 0){
+            return 0;
+        }
+        
+    $qualifyForTier2 =  $qty / 10001 >= 1;
+
+// if dont qualify for tier, means its tier 1
+    if(!$qualifyForTier2){
+        return $tiers[0];
+    } 
+    $qualifyForTier3 =  $qty / 100001 >= 1;
+//if  qualify for tier 3, means its tier 3
+    if($qualifyForTier3){
+        return $tiers[100001];
+    }
+// else, its tier 2
+    return $tiers[10001];
+    
+        
     }
 
     /**
@@ -42,7 +61,29 @@ class PriceHelper
      */
     public static function getTotalPriceTierAtQty(int $qty, array $tiers): float
     {
-        return 0.0;
+        // if negative or zero, straight return
+        
+        if($qty <= 0){
+            return 0;
+        }
+        $qtyTiers = array_keys($tiers);
+        $prices = array_values($tiers);
+   
+
+        $quantityForTier2 = $qty - ($qtyTiers[1] ) ;
+        $quantityForTier3 = $qty - $qtyTiers[2];
+
+         if($quantityForTier2 < 1){
+          return $qty * $prices[0];
+        }
+         
+         if($quantityForTier3 >= 0){
+            return $quantityForTier3 * $prices[2] + ($qtyTiers[2]- $qtyTiers[1]) * $prices[1] + ($qtyTiers[1]-1) * $prices[0];
+            
+         }
+
+        return ($qtyTiers[1]-1)  * $prices[0]  + $quantityForTier2 * $prices[1];
+        
     }
 
     /**
@@ -61,6 +102,55 @@ class PriceHelper
      */
     public static function getPriceAtEachQty(array $qtyArr, array $tiers, bool $cumulative = false): array
     {
-       return [];
+    $monthlyCharges =[];
+
+       if($cumulative){
+
+         //22021 + 933 = 22954 (cumulative)
+        //find cost of 22954 - cost of 933 thats the cost of the month 2
+        //22954 + 24791 = 47745 (cumulative)
+        //find the cost of 47745 - 22954 = cost of month 3
+
+        // $cumulativeCosts =  [cumulativeCostMonth1 , cumulativeCostMonth2, cumulativeCostMonth3 ...]
+        //$realcost = [cumulativeCostMonth1 - CumulativeCostMonth 0, cumulativeCostMonth2 - CumulativeCostMonth 1, cumulativeCostMonth3 - CumulativeCostMonth 2, ...]
+
+        // to use one foreach loop so that its more efficient, we keep track of three arrays, cumulativeCost, cumulativeBikes and monthlyCharges
+    
+
+           //3a
+           $cumulativeCosts = [];
+           $cumulativeBikes = [];
+         
+           foreach($qtyArr as $index => $value){
+                if($index === 0){
+                    $costForMonth1 = PriceHelper::getTotalPriceTierAtQty($value, $tiers);
+                     array_push($cumulativeCosts, $costForMonth1);
+                     array_push($cumulativeBikes,$value); 
+                     array_push($monthlyCharges,  $costForMonth1);
+                } else {
+                    $cumulativeBikeForMonth = $value + $cumulativeBikes[$index-1];
+                   array_push( $cumulativeBikes ,$cumulativeBikeForMonth);
+                     array_push($cumulativeCosts,PriceHelper::getTotalPriceTierAtQty($cumulativeBikeForMonth,$tiers));
+                     array_push( $monthlyCharges, $cumulativeCosts[$index]- $cumulativeCosts[$index-1]);
+                }
+           }
+
+           return $monthlyCharges;
+
+
+       }
+
+       //3b NOT CUMULATIVE
+       foreach($qtyArr as $monthlyBike){
+          $monthlyCharge = PriceHelper::getTotalPriceTierAtQty($monthlyBike, $tiers);
+          array_push($monthlyCharges , $monthlyCharge);
+       }
+
+       return $monthlyCharges;
+
+
     }
+
+
+
 }
