@@ -113,25 +113,19 @@ class PriceHelper
         // $cumulativeCosts =  [cumulativeCostMonth1 , cumulativeCostMonth2, cumulativeCostMonth3 ...]
         //$realcost = [cumulativeCostMonth1 - CumulativeCostMonth 0, cumulativeCostMonth2 - CumulativeCostMonth 1, cumulativeCostMonth3 - CumulativeCostMonth 2, ...]
 
-        // to use one foreach loop so that its more efficient, we keep track of three arrays, cumulativeCost, cumulativeBikes and monthlyCharges
+        // to use one foreach loop so that its more efficient, we keep track of 1 array( total cost) and two values, the previousCumulativeCost, and the cumulativeBikes; we use the cumulativeBikes to calculate the value of this month + all the prev months, and we use prevCost to off set this number
     
 
            //3a
-           $cumulativeCosts = [];
-           $cumulativeBikes = [];
-         
-           foreach($qtyArr as $index => $value){
-                if($index === 0){
-                    $costForMonth1 = PriceHelper::getTotalPriceTierAtQty($value, $tiers);
-                     array_push($cumulativeCosts, $costForMonth1);
-                     array_push($cumulativeBikes,$value); 
-                     array_push($monthlyCharges,  $costForMonth1);
-                } else {
-                    $cumulativeBikeForMonth = $value + $cumulativeBikes[$index-1];
-                   array_push( $cumulativeBikes ,$cumulativeBikeForMonth);
-                     array_push($cumulativeCosts,PriceHelper::getTotalPriceTierAtQty($cumulativeBikeForMonth,$tiers));
-                     array_push( $monthlyCharges, $cumulativeCosts[$index]- $cumulativeCosts[$index-1]);
-                }
+           $prevCumulativeCosts = 0;
+           $cumulativeBikes = 0;
+
+            foreach($qtyArr as $index => $value){
+                    $cumulativeBikes += $value;
+                    $cumulativeCost = PriceHelper::getTotalPriceTierAtQty($cumulativeBikes, $tiers);
+                    $costForThisMonth = $cumulativeCost-$prevCumulativeCosts;
+                    array_push($monthlyCharges,  $costForThisMonth);
+                    $prevCumulativeCosts = $cumulativeCost;       
            }
 
            return $monthlyCharges;
